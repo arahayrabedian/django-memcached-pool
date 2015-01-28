@@ -163,7 +163,12 @@ class UMemcacheCache(MemcachedCache):
         else:
             value = '%d' % value
         key = self.make_key(key, version=version)
-        self.call('set', key, value, self._get_memcache_timeout(timeout), flag)
+        resp = self.call('set', key, value, self._get_memcache_timeout(timeout), flag)
+
+        if resp == 'STORED':  # Umemcached returns 'STORED' if successful, but a Django cache shouldn't return anything
+            return
+        else:  # propagate the response if there's an error so the caller can know there was an error
+            return resp
 
     def delete(self, key, version=None):
         key = self.make_key(key, version=version)
